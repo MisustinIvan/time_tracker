@@ -21,17 +21,17 @@ func initialize() error {
 	}
 
 	const query = `
-create table time_entries (
+create table if not exists time_entries (
 id integer primary key autoincrement,
 start datetime,
 duration time,
 description text
 );
-create table tax (
+create table if not exists tax (
 	rate real
 );
 insert into tax (rate) values (0);
-create table wage (
+create table if not exists wage (
 	rate real
 );
 insert into wage (rate) values (0);
