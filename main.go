@@ -239,7 +239,7 @@ func main() {
 		if money, err := total_money(os.Args[2:]...); err != nil {
 			fmt.Printf("Could not get total: %s\n", err)
 		} else {
-			fmt.Printf("Total: %f Kč", money)
+			fmt.Printf("Total: %.2f Kč", money)
 		}
 	case "init":
 		if err := initialize(); err != nil {
