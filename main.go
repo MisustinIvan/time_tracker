@@ -14,6 +14,13 @@ import (
 var db_dir string
 var db *sql.DB
 
+type time_entry struct {
+	id          int
+	start       time.Time
+	duration    time.Duration
+	description string
+}
+
 func initialize() error {
 	err := os.MkdirAll(db_dir, os.ModePerm)
 	if err != nil {
@@ -103,7 +110,7 @@ func add(args ...string) error {
 
 	query := "insert into time_entries (duration, start, description) values (?,?,?)"
 	description := strings.Join(args[1:], " ")
-	_, err = db.Exec(query, duration, start_time, description)
+	_, err = db.Exec(query, duration, start_time.Format(time.RFC3339), description)
 	if err != nil {
 		return err
 	}
@@ -176,6 +183,72 @@ func total_money(args ...string) (float64, error) {
 	return money, nil
 }
 
+func report(args ...string) (string, error) {
+	if len(args) != 2 {
+		return "", fmt.Errorf("Invalid number of arguments!")
+	}
+
+	month_s := args[0]
+	month_i, err := strconv.ParseInt(month_s, 10, 64)
+	if err != nil {
+		return "", err
+	}
+
+	year_s := args[1]
+	year_i, err := strconv.ParseInt(year_s, 10, 64)
+	if err != nil {
+		return "", err
+	}
+
+	var entries []time_entry
+
+	start := time.Date(int(year_i), time.Month(month_i), 0, 0, 0, 0, 0, time.UTC)
+	end := start.AddDate(0, 1, 0)
+	query := `
+    select id, start, duration, description
+    from time_entries
+    where start > ? and start < ?
+`
+	if rows, err := db.Query(query, start, end); err != nil {
+		return "", err
+	} else {
+		for rows.Next() {
+			var id int
+			var duration time.Duration
+			var start time.Time
+			var description string
+			var start_s string
+
+			if err := rows.Scan(&id, &start_s, &duration, &description); err != nil {
+				return "", err
+			}
+
+			start, err = time.Parse(time.RFC3339, start_s)
+			if err != nil {
+				return "", err
+			}
+
+			entries = append(entries, time_entry{
+				id:          id,
+				start:       start,
+				duration:    duration,
+				description: description,
+			})
+		}
+		if rows.Err() != nil {
+			return "", err
+		}
+	}
+
+	var res strings.Builder
+
+	for _, e := range entries {
+		fmt.Fprintf(&res, "%s\t%s\t%s\n", e.start.Format(time.DateOnly), e.duration.Round(time.Minute).String(), e.description)
+	}
+
+	return res.String(), nil
+}
+
 func print_usage() {
 	const usage = `
 time_tracker - a tool for tracking time spent on various activities
@@ -240,6 +313,12 @@ func main() {
 			fmt.Printf("Could not get total: %s\n", err)
 		} else {
 			fmt.Printf("Total: %.2f Kč", money)
+		}
+	case "report":
+		if report, err := report(os.Args[2:]...); err != nil {
+			fmt.Printf("Could not get report: %s\n", err)
+		} else {
+			fmt.Printf("Report:\n%s\n", report)
 		}
 	case "init":
 		if err := initialize(); err != nil {
