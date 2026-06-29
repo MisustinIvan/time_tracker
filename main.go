@@ -119,24 +119,31 @@ func add(args ...string) error {
 }
 
 func total(args ...string) (time.Duration, error) {
-	if len(args) != 2 {
+	var start time.Time
+	var end time.Time
+
+	switch len(args) {
+	case 2:
+		month_s := args[0]
+		month_i, err := strconv.ParseInt(month_s, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+
+		year_s := args[1]
+		year_i, err := strconv.ParseInt(year_s, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+
+		start = time.Date(int(year_i), time.Month(month_i), 0, 0, 0, 0, 0, time.UTC)
+		end = start.AddDate(0, 1, 0)
+	case 0:
+		start = time.Date(time.Now().Year(), time.Now().Month(), 0, 0, 0, 0, 0, time.UTC)
+		end = start.AddDate(0, 1, 0)
+	default:
 		return 0, fmt.Errorf("Invalid number of arguments!")
 	}
-
-	month_s := args[0]
-	month_i, err := strconv.ParseInt(month_s, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	year_s := args[1]
-	year_i, err := strconv.ParseInt(year_s, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	start := time.Date(int(year_i), time.Month(month_i), 0, 0, 0, 0, 0, time.UTC)
-	end := start.AddDate(0, 1, 0)
 
 	query := "select coalesce(sum(duration), 0) from time_entries where start > ? and start < ?"
 	var total time.Duration
@@ -148,24 +155,30 @@ func total(args ...string) (time.Duration, error) {
 }
 
 func total_money(args ...string) (float64, error) {
-	if len(args) != 2 {
+	var start time.Time
+	var end time.Time
+
+	switch len(args) {
+	case 2:
+		month_s := args[0]
+		month_i, err := strconv.ParseInt(month_s, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+
+		year_s := args[1]
+		year_i, err := strconv.ParseInt(year_s, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		start = time.Date(int(year_i), time.Month(month_i), 0, 0, 0, 0, 0, time.UTC)
+		end = start.AddDate(0, 1, 0)
+	case 0:
+		start = time.Date(time.Now().Year(), time.Now().Month(), 0, 0, 0, 0, 0, time.UTC)
+		end = start.AddDate(0, 1, 0)
+	default:
 		return 0, fmt.Errorf("Invalid number of arguments!")
 	}
-
-	month_s := args[0]
-	month_i, err := strconv.ParseInt(month_s, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	year_s := args[1]
-	year_i, err := strconv.ParseInt(year_s, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	start := time.Date(int(year_i), time.Month(month_i), 0, 0, 0, 0, 0, time.UTC)
-	end := start.AddDate(0, 1, 0)
 
 	query := `
     select
